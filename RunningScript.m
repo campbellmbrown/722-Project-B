@@ -5,6 +5,6 @@ rho = 7850;
 E = 200e9;
 m = 0.02;
 
-[natFreqs, modeShapes] = RayleighRitz();
+[natFreqs, modeShapes] = RayleighRitz(L, w, t, rho, E, m);
 
 %[natFreqs, modeShapes] = FiniteElement();
