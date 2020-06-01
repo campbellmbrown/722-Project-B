@@ -1,4 +1,4 @@
-function [natFreqs, modeShapes] = RayleighRitz(L, w, t, rho, E, M_t)
+function [nat_freqs, mode_shapes] = RayleighRitz(L, w, t, rho, E, M_t)
 
 % Calculating cross-sectional area and second moment of area
 A_cs = w*t;
@@ -6,40 +6,43 @@ I = w*(t^3)/12;
 
 % Defining our trial functions
 syms x
-phi = [x^2, x^3, x^4, x^5];
-n = length(phi);
+phi = [x, x^2, x^3, x^4];
 
 % Pre-allocating
-k = zeros(n);
-m = zeros(n);
-natFreqs = zeros(1, n);
-modeShapes = zeros(n);
+K = zeros(4);
+M = zeros(4);
 
-for i = 1:n
-    for j = 1:n
+for i = 1:4
+    for j = 1:4
         % Filling in the k matrix
         func_k = diff(phi(i), 2)*diff(phi(j), 2);
-        k(i,j) = int(E*I*func_k, [0 L]);
+        K(i,j) = int(E*I*func_k, [0 L]);
         
         % Filling in the m matrix
         func_m = rho*A_cs*phi(i)*phi(j);
-        x = L;
-        m(i,j) = int(func_m, [0 L]) + M_t*subs(phi(i))*subs(phi(j));
+        M(i,j) = int(func_m, [0 L]) + M_t*subs(phi(i), x, L)*subs(phi(j), x, L);
     end
 end
 
 % Converting from sym to double
-k = double(k);
-m = double(m);
+K = double(K);
+M = double(M);
 
 % We now have |k-lambda*M|=0. This is an eigen problem
-[eigenVectors, eigenValues] = eig(k, m);
+[eigen_vectors, eigen_values] = eig(K, M);
 
-for i = 1:n
-    % Find the natural frequencies
-    natFreqs(i) = sqrt(eigenValues(i, i));
-    % Find the mode shapes
-    modeShapes(:,i) = eigenVectors(:,i)/max(abs(eigenVectors(:,i)));
+% Find the natural frequencies
+nat_freqs = sqrt(diag(eigen_values));
+
+% Find the mode shapes
+x_range = 0:0.01:L;
+mode_shapes = zeros(4, length(x_range));
+for i = 1:4
+    for j = 1:4
+        mode_shapes(i,:) = mode_shapes(i,:) + eigen_vectors(j,i)*double(subs(phi(j), x, x_range));
+    end
+    % Normalising to have max value of 1
+    mode_shapes(i,:) = mode_shapes(i,:)/max(abs(mode_shapes(i,:)));
 end
 
 end
